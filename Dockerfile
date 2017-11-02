@@ -1,15 +1,26 @@
-FROM golang:1.6.3
-MAINTAINER Shouta Yoshikai <shouta.yoshikai@gmail.com>
+FROM golang:1.8.5
+LABEL  maintainer "Shouta Yoshikai <shouta.yoshikai@gmail.com>"
 
-ENV GAE_VER 1.9.48
-ENV GAE_ZIP go_appengine_sdk_linux_amd64-$GAE_VER.zip
+ENV CLOUD_SDK_VERSION 177.0.0
 
-RUN apt-get update && \
-  apt-get install --yes \
-  unzip \
-	python
+ENV PATH /google-cloud-sdk/bin:$PATH
+RUN apt-get update && apt-get install -y \
+        curl \
+        python \
+        # py-crcmod \
+        bash \
+        # libc6-compat \
+        openssh-client \
+        git \
+    && cd / && curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
+    tar xzf google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
+    rm google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
+    ln -s /lib /lib64 && \
+    gcloud config set core/disable_usage_reporting true && \
+    gcloud config set component_manager/disable_update_check true && \
+    gcloud config set metrics/environment github_docker_image && \
+    gcloud --version && \
+    gcloud components install app-engine-go
 
-ADD https://storage.googleapis.com/appengine-sdks/featured/$GAE_ZIP .
-RUN unzip -q $GAE_ZIP -d /usr/local
-RUN rm $GAE_ZIP
-ENV PATH $PATH:/usr/local/go_appengine/
+RUN go get -u github.com/jstemmer/go-junit-report
+RUN curl https://glide.sh/get | sh
